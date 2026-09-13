@@ -117,8 +117,14 @@
 
   <div class="card plan-banner" id="planBanner" style="display:none">
     <div class="txt" id="planText"></div>
-    <button class="btn kill" onclick="openPlan(true)">⚔️ Update Kill Plan</button>
+    <button class="btn ghost sm" onclick="toggleSchedule()">📅 Day-wise schedule</button>
+    <button class="btn kill" onclick="openPlan()">⚔️ Custom deadline</button>
     <button class="btn ghost sm" onclick="clearPlan()">✕</button>
+  </div>
+
+  <div class="card" id="scheduleCard" style="display:none; margin-bottom:16px">
+    <h2>🗓️ Day-wise Kill Schedule <span class="tag" id="scheduleMeta"></span></h2>
+    <div id="scheduleView" style="max-height:360px; overflow-y:auto"></div>
   </div>
 
   <div class="grid2">
@@ -253,7 +259,8 @@ function addItem(e){
   if(!chapter) return false;
   state.items.unshift({id:uid(), subjectId:sub, chapter, total:count, done:0, createdAt:todayISO()});
   document.getElementById('fChapter').value=''; document.getElementById('fCount').value='1';
-  save(); render(); toast('Backlog added — now go kill it ⚔️');
+  ensureAutoPlan();
+  render(); toast('Added ✅ Kill Plan auto-updated ⚡');
   return false;
 }
 function bump(id, delta){
@@ -266,14 +273,17 @@ function bump(id, delta){
     state.log[key] = Math.max(0, (state.log[key]||0) + diff);
   }
   if(it.done === it.total && diff > 0) toast(`"${it.chapter}" cleared ✅ Shabaash!`);
+  ensureAutoPlan();
   save(); render();
 }
 function removeItem(id){
   state.items = state.items.filter(x=>x.id!==id);
-  save(); render(); toast('Entry removed');
+  ensureAutoPlan();
+  render(); toast('Entry removed');
 }
 function setGoal(v){
   state.dailyGoal = Math.max(1, parseInt(v)||6);
+  ensureAutoPlan();
   save(); render();
 }
 function setFilter(f, el){
@@ -299,16 +309,13 @@ function openPlan(updateOnly){
   draftPlan = null;
   dlg.showModal();
 }
-function buildPlan(){
+function makeSchedule(days){
   const {pending} = totals();
-  if(pending===0){ toast('Nothing to kill — backlog is 0 🎉'); return; }
-  const days = Math.max(1, parseInt(document.getElementById('planDays').value)||14);
   const perDay = Math.ceil(pending/days);
-  // distribute pending lectures day by day
   const queue = [];
   state.items.forEach(it=>{ if(it.done<it.total) queue.push({chapter:it.chapter, subjectId:it.subjectId, left:it.total-it.done}); });
-  const planDays = [];
-  let start = new Date();
+  const schedule = [];
+  const start = new Date();
   for(let d=0; d<days && queue.length; d++){
     const date = new Date(start); date.setDate(start.getDate()+d);
     let capacity = perDay, tasks=[];
@@ -319,10 +326,50 @@ function buildPlan(){
       t.left -= take; capacity -= take;
       if(t.left===0) queue.shift();
     }
-    planDays.push({date: date.toLocaleDateString('en-CA'), label: date.toLocaleDateString('en-IN',{weekday:'short', day:'numeric', month:'short'}), tasks});
+    schedule.push({date: date.toLocaleDateString('en-CA'), label: date.toLocaleDateString('en-IN',{weekday:'short', day:'numeric', month:'short'}), tasks});
   }
-  draftPlan = {startISO: todayISO(), days, perDay, pending, created: todayISO(), schedule: planDays};
+  return {schedule, perDay};
+}
+/* Auto Kill Plan — generates itself whenever backlog changes, based on your daily goal */
+function ensureAutoPlan(){
+  const {pending} = totals();
+  if(pending === 0){
+    if(state.plan && state.plan.auto) state.plan = null;
+    save(); return;
+  }
+  if(state.plan && !state.plan.auto) return; // user set a custom deadline — don't touch it
+  const days = Math.max(1, Math.ceil(pending / state.dailyGoal));
+  const {schedule, perDay} = makeSchedule(days);
+  state.plan = {startISO: todayISO(), days, perDay, pending, created: todayISO(), schedule, auto:true};
+  save();
+}
+function buildPlan(){
+  const {pending} = totals();
+  if(pending===0){ toast('Nothing to kill — backlog is 0 🎉'); return; }
+  const days = Math.max(1, parseInt(document.getElementById('planDays').value)||14);
+  const {schedule, perDay} = makeSchedule(days);
+  draftPlan = {startISO: todayISO(), days, perDay, pending, created: todayISO(), schedule, auto:false};
   renderDraftPlan();
+}
+function toggleSchedule(){
+  const card = document.getElementById('scheduleCard');
+  const hidden = card.style.display === 'none';
+  card.style.display = hidden ? 'block' : 'none';
+  if(hidden) renderSchedule();
+}
+function renderSchedule(){
+  const p = state.plan;
+  if(!p) return;
+  document.getElementById('scheduleMeta').textContent =
+    `${p.pending} lectures · ${p.days} days · ${p.perDay}/day ${p.auto?'· auto ⚡':''}`;
+  const t = todayISO();
+  document.getElementById('scheduleView').innerHTML = p.schedule.map((d,i)=>{
+    const isToday = d.date === t;
+    return `<div class="plan-day" ${isToday?'style="border-color:var(--good); background:#12291f"':''}>
+      <b>Day ${i+1}</b> · ${d.label}${isToday?'<span class="today-pill">AAJ KA DIN</span>':''}
+      <div class="tasks">${d.tasks.map(x=>`${subjName(x.subjectId)} — ${esc(x.chapter)} (${x.n} lec)`).join('<br>')}</div>
+    </div>`;
+  }).join('');
 }
 function renderDraftPlan(){
   const out = document.getElementById('planOutput');
@@ -380,16 +427,23 @@ function render(){
 
   // plan banner
   const banner = document.getElementById('planBanner');
+  const schedCard = document.getElementById('scheduleCard');
   if(state.plan){
     const p = state.plan;
     const start = new Date(p.startISO);
     const elapsed = Math.max(0, Math.floor((new Date(todayISO()) - start)/86400000));
     const expected = Math.min(p.pending, elapsed * p.perDay);
     banner.style.display='flex';
-    document.getElementById('planText').innerHTML =
-      `⚔️ <b>Kill Plan active:</b> finish ${p.pending} lectures in ${p.days} days (${p.perDay}/day). ` +
-      `<small>Started ${new Date(p.startISO).toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — day ${Math.min(elapsed+1,p.days)} of ${p.days}. Expected done by now: ${expected}.</small>`;
-  }else banner.style.display='none';
+    document.getElementById('planText').innerHTML = p.auto
+      ? `⚡ <b>Auto Kill Plan ready:</b> finish <b>${p.pending}</b> pending lectures in <b>${p.days} days</b> (${p.perDay}/day, based on your daily goal). ` +
+        `<small>Add/complete lectures — plan khud update hota rahega. Day ${Math.min(elapsed+1,p.days)} of ${p.days} · expected done by now: ${expected}.</small>`
+      : `⚔️ <b>Kill Plan active:</b> finish ${p.pending} lectures in ${p.days} days (${p.perDay}/day). ` +
+        `<small>Started ${start.toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — day ${Math.min(elapsed+1,p.days)} of ${p.days}. Expected done by now: ${expected}.</small>`;
+    if(schedCard.style.display !== 'none') renderSchedule();
+  }else{
+    banner.style.display='none';
+    schedCard.style.display='none';
+  }
 
   // items
   const list = document.getElementById('itemList');
