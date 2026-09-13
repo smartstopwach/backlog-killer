@@ -206,3 +206,89 @@ body.menu-open #menu-btn span:last-child{transform:translateY(-4px) rotate(-45de
 
 /* ---------- shared reveal utility ---------- */
 .reveal{opacity:1} /* JS animates via fromTo; stays visible if JS dies */
+
+/* ============================================================
+   SECTION 3 — MARQUEE
+   ============================================================ */
+.marquee{
+  min-height:0;height:88px;padding:0;
+  display:flex;align-items:center;overflow:hidden;
+  border-bottom:1px solid var(--hairline);
+}
+.marquee-track{display:flex;align-items:center;white-space:nowrap;will-change:transform}
+.mq-item{
+  display:inline-flex;align-items:center;
+  font-family:var(--font-display);font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;font-size:clamp(1.05rem,2.6vw,1.7rem);color:var(--text);
+}
+.mq-item::after{
+  content:'';width:10px;height:10px;border-radius:50%;
+  background:var(--accent);margin:0 2.4rem;flex:0 0 auto;
+}
+
+/* ============================================================
+   SECTION 4 — PINNED STORY
+   ============================================================ */
+.story{overflow:hidden}
+.story-stage{
+  position:relative;min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+}
+.story-line{
+  position:absolute;left:24px;right:24px;text-align:center;
+  font-family:var(--font-display);font-weight:700;
+  font-size:clamp(1.9rem,6.4vw,5.6rem);line-height:1.04;letter-spacing:-.02em;
+}
+.story-bar{
+  position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  width:2px;height:46vh;background:var(--hairline);
+}
+.story-bar i{
+  display:block;width:100%;height:100%;background:var(--accent);
+  transform:scaleY(0);transform-origin:top center;
+}
+.story-count{
+  position:absolute;right:24px;bottom:28px;
+  font-family:var(--font-display);font-variant-numeric:tabular-nums;
+  color:var(--muted);letter-spacing:.22em;font-size:.95rem;
+}
+.story-count #story-beat{color:var(--accent)}
+
+/* ============================================================
+   SECTION 5 — STICKY TWO-COLUMN
+   ============================================================ */
+.duo{display:grid;grid-template-columns:.9fr 1.1fr;gap:64px;align-items:start}
+.duo-left{position:sticky;top:120px}
+.duo-title{
+  font-family:var(--font-display);font-weight:800;text-transform:uppercase;
+  font-size:clamp(2.2rem,5vw,4.8rem);line-height:.96;letter-spacing:-.02em;
+}
+.duo-copy{color:var(--muted);max-width:44ch;margin:20px 0 28px}
+.duo-right{display:flex;flex-direction:column;gap:22px;padding-bottom:40px}
+.card{
+  position:relative;background:var(--surface);
+  border:1px solid var(--hairline);border-radius:16px;padding:32px 30px;
+  transition:transform .35s ease,border-color .35s ease;
+}
+.card .idx{
+  position:absolute;top:18px;right:26px;
+  font-family:var(--font-display);font-weight:800;font-size:4.4rem;line-height:1;
+  color:var(--text);opacity:.07;transition:opacity .3s ease;
+  font-variant-numeric:tabular-nums;
+}
+.card h3{font-family:var(--font-display);font-size:1.4rem;font-weight:700;margin-bottom:10px}
+.card p{color:var(--muted);font-size:.97rem;max-width:52ch}
+.card:hover{transform:translateY(-6px);border-color:rgba(242,244,248,.28)}
+.card:hover .idx{opacity:.18}
+@media (max-width:900px){
+  .duo{grid-template-columns:1fr;gap:40px}
+  .duo-left{position:static}
+}
+
+/* ---------- reduced motion: everything visible, un-pinned ---------- */
+@media (prefers-reduced-motion: reduce){
+  .story-stage{min-height:auto;display:block;padding:48px 0}
+  .story-line{position:static;left:auto;right:auto;margin:0 0 20px;opacity:1;transform:none;clip-path:none}
+  .story-bar{display:none}
+  .marquee-track{transform:none}
+}

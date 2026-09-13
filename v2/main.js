@@ -303,6 +303,102 @@ function initHeroAmbient() {
 }
 
 /* ============================================================
+   SECTION 3 — MARQUEE (linear allowed here only)
+   ============================================================ */
+function initMarquee() {
+  var track = $('#marquee-track');
+  if (!track) return;
+  /* duplicate the track in JS for a seamless -50% loop (x2 so ultrawide never gaps) */
+  track.innerHTML += track.innerHTML;
+  track.innerHTML += track.innerHTML;
+  if (prefersReduced || !window.gsap || !window.ScrollTrigger) return;
+
+  var tween = gsap.to(track, { xPercent: -50, ease: 'none', duration: 22, repeat: -1 });
+  var tsTo = gsap.quickTo(tween, 'timeScale', { duration: 0.6, ease: 'power3.out' });
+
+  ScrollTrigger.create({
+    start: 0,
+    end: 'max',
+    onUpdate: function (self) {
+      var speed = Math.abs(self.getVelocity());
+      var mag = 0.6 + Math.min(1, speed / 4000) * 1.9; /* clamped 0.6 – 2.5, never frantic */
+      tsTo(self.direction === 1 ? mag : -mag);         /* flip with scroll direction */
+    }
+  });
+}
+
+/* ============================================================
+   SECTION 4 — PINNED STORY (one scrub timeline, 4 beats)
+   ============================================================ */
+function initStory() {
+  var section = $('.story');
+  if (!section || !window.gsap || !window.ScrollTrigger) return;
+  var lines = $$('.story-line', section);
+  var bar = $('#story-progress');
+  var beat = $('#story-beat');
+
+  /* reduced motion: CSS already shows all 4 lines stacked, un-pinned */
+  if (prefersReduced) return;
+
+  gsap.set(lines, { opacity: 0, y: 40, clipPath: 'inset(0 0 100% 0)' });
+
+  var tl = gsap.timeline({
+    defaults: { ease: 'power3.out', duration: 1 },
+    scrollTrigger: {
+      trigger: section,
+      start: 'top top',
+      end: '+=200%',
+      pin: true,
+      pinSpacing: true,
+      anticipateResize: true,
+      fastScrollEnd: true,
+      anticipatePin: 1,
+      scrub: true,
+      onUpdate: function (self) {
+        if (bar) bar.style.transform = 'scaleY(' + self.progress + ')';
+        if (beat) beat.textContent = '0' + Math.min(4, Math.floor(self.progress * 4) + 1);
+      }
+    }
+  });
+
+  var step = 1.6;
+  lines.forEach(function (line, i) {
+    var t = i * step;
+    /* enter: lift from y 40 behind a clip-path inset reveal */
+    tl.to(line, { opacity: 1, y: 0, clipPath: 'inset(0 0 -8% 0)' }, t);
+    /* previous line exits at y -40, crossfading under the newcomer */
+    if (i > 0) {
+      tl.to(lines[i - 1], { opacity: 0, y: -40 }, t - 0.5);
+    }
+  });
+  /* let the resolution breathe before unpin */
+  tl.to({}, { duration: 1 });
+}
+
+/* ============================================================
+   SECTION 5 — STICKY TWO-COLUMN (batch card entrances)
+   ============================================================ */
+function initDuo() {
+  var cards = $$('.card');
+  if (!cards.length || prefersReduced || !window.gsap || !window.ScrollTrigger) return;
+
+  gsap.set(cards, { y: 60, opacity: 0, scale: 0.98 });
+  ScrollTrigger.batch(cards, {
+    start: 'top 85%',
+    onEnter: function (batch) {
+      gsap.to(batch, {
+        y: 0, opacity: 1, scale: 1,
+        duration: 0.9, ease: 'power3.out', stagger: 0.1,
+        overwrite: true, clearProps: 'transform,opacity' /* hand back to CSS for hover */
+      });
+    },
+    onEnterBack: function (batch) {
+      gsap.to(batch, { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: 'power3.out', overwrite: true });
+    }
+  });
+}
+
+/* ============================================================
    INIT
    ============================================================ */
 function init() {
@@ -310,6 +406,9 @@ function init() {
   initReveals();
   initAnchors();
   initHeroAmbient();
+  initMarquee();
+  initStory();
+  initDuo();
   headerOnScroll();
   runPreloader();
 }
