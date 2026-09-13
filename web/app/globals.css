@@ -542,3 +542,65 @@ body.has-cursor, body.has-cursor a, body.has-cursor button{cursor:none}
 
 /* three.js hero canvas */
 .hero-3d{position:absolute;inset:0;z-index:0;pointer-events:none;width:100%;height:100%;display:block}
+
+/* ============================================================
+   VISUAL OVERHAUL — instant, unmistakable
+   ============================================================ */
+
+/* outline the second display line (hero + CTA) */
+.hero-title .line:last-child,
+.cta-title .line:last-child{
+  color:transparent;
+  -webkit-text-stroke:2px var(--accent);
+}
+
+/* tilted full-bleed accent marquee strip */
+.marquee{
+  width:110vw;margin-left:-5vw;height:96px;
+  background:var(--accent);
+  border-top:1px solid var(--accent);border-bottom:1px solid var(--accent);
+  transform:rotate(-1.6deg);
+}
+.marquee::before{content:none}
+.mq-item{color:#140602;font-size:clamp(1.3rem,3vw,2.1rem)}
+.mq-item::after{background:#140602}
+
+/* ghost section numbers */
+main{counter-reset:sec}
+main > section{counter-increment:sec}
+.container{position:relative;z-index:1}
+main > section::before{
+  content:counter(sec, decimal-leading-zero);
+  position:absolute;top:36px;right:20px;z-index:0;
+  font-family:var(--font-display);font-weight:800;line-height:1;
+  font-size:clamp(4rem,10vw,9rem);
+  color:transparent;-webkit-text-stroke:1px var(--hairline);
+  pointer-events:none;
+}
+.marquee::before{content:none!important}
+
+/* panels + cards get an accent spine */
+.h-panel{border-top:3px solid var(--accent)}
+.h-panel:nth-child(odd){transform:rotate(-.3deg)}
+.h-panel:nth-child(even){transform:rotate(.3deg)}
+.card{border-left:3px solid var(--accent)}
+
+/* stats go loud */
+.stat-num{color:var(--accent-2)}
+
+/* giant footer wordmark */
+.footer{position:relative;overflow:hidden}
+.footer::after{
+  content:'KILL THE BACKLOG';
+  position:absolute;bottom:-.32em;left:0;right:0;
+  text-align:center;white-space:nowrap;
+  font-family:var(--font-display);font-weight:800;line-height:1;
+  font-size:clamp(4rem,13.5vw,13rem);
+  color:transparent;-webkit-text-stroke:1px rgba(242,244,248,.08);
+  pointer-events:none;
+}
+
+/* accent scrollbar */
+::-webkit-scrollbar{width:10px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:6px}
