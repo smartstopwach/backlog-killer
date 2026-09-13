@@ -260,35 +260,39 @@ function initHeroAmbient() {
   /* floating card: slow 6s yoyo drift between -12 and 12 */
   gsap.fromTo('#float-card', { y: -12 }, { y: 12, duration: 3, yoyo: true, repeat: -1, ease: 'sine.inOut' });
 
-  /* scroll parallax: background 0.3x, float 0.15x */
-  gsap.to('.hero-bg', {
-    y: function () { return Math.round(window.innerHeight * 0.3); },
-    ease: 'none',
-    scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
-  });
-  gsap.to('#hero-float', {
-    y: function () { return -Math.round(window.innerHeight * 0.15); },
-    ease: 'none',
-    scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 0.6 }
-  });
+  /* parallax + mouse effects: desktop only, zero below 900px */
+  var mm = gsap.matchMedia();
+  mm.add('(min-width: 900px)', function () {
+    /* scroll parallax: background 0.3x, float 0.15x */
+    gsap.to('.hero-bg', {
+      y: function () { return Math.round(window.innerHeight * 0.3); },
+      ease: 'none',
+      scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
+    });
+    gsap.to('#hero-float', {
+      y: function () { return -Math.round(window.innerHeight * 0.15); },
+      ease: 'none',
+      scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 0.6 }
+    });
 
-  /* mouse parallax — headline 10px, panel 20px, against the cursor */
-  if (window.matchMedia('(pointer: fine)').matches) {
-    var tX = gsap.quickTo('#hero-title', 'x', { duration: 0.7, ease: 'power3.out' });
-    var tY = gsap.quickTo('#hero-title', 'y', { duration: 0.7, ease: 'power3.out' });
-    var fX = gsap.quickTo('#hero-float-mouse', 'x', { duration: 0.7, ease: 'power3.out' });
-    var fY = gsap.quickTo('#hero-float-mouse', 'y', { duration: 0.7, ease: 'power3.out' });
-    var hero = $('.hero');
-    if (hero) {
-      hero.addEventListener('mousemove', function (e) {
-        var nx = e.clientX / window.innerWidth - 0.5;
-        var ny = e.clientY / window.innerHeight - 0.5;
-        tX(-nx * 10); tY(-ny * 10);
-        fX(-nx * 20); fY(-ny * 20);
-      });
-      hero.addEventListener('mouseleave', function () { tX(0); tY(0); fX(0); fY(0); });
+    /* mouse parallax — headline 10px, panel 20px, against the cursor */
+    if (window.matchMedia('(pointer: fine)').matches) {
+      var tX = gsap.quickTo('#hero-title', 'x', { duration: 0.7, ease: 'power3.out' });
+      var tY = gsap.quickTo('#hero-title', 'y', { duration: 0.7, ease: 'power3.out' });
+      var fX = gsap.quickTo('#hero-float-mouse', 'x', { duration: 0.7, ease: 'power3.out' });
+      var fY = gsap.quickTo('#hero-float-mouse', 'y', { duration: 0.7, ease: 'power3.out' });
+      var hero = $('.hero');
+      if (hero) {
+        hero.addEventListener('mousemove', function (e) {
+          var nx = e.clientX / window.innerWidth - 0.5;
+          var ny = e.clientY / window.innerHeight - 0.5;
+          tX(-nx * 10); tY(-ny * 10);
+          fX(-nx * 20); fY(-ny * 20);
+        });
+        hero.addEventListener('mouseleave', function () { tX(0); tY(0); fX(0); fY(0); });
+      }
     }
-  }
+  });
 
   /* scroll hint: looping scaleY line, gone after 80px */
   gsap.fromTo('#hint-line', { scaleY: 0 }, {
@@ -521,6 +525,105 @@ function initFaq() {
 }
 
 /* ============================================================
+   SECTION 10 — FINAL CTA (masked chars + line wipe + 0.2x bg)
+   ============================================================ */
+function initCta() {
+  var section = $('.cta');
+  if (!section || !window.gsap || !window.ScrollTrigger) return;
+
+  /* low-opacity returning gradients, parallax 0.2x */
+  if (!prefersReduced) {
+    gsap.to('.cta-bg', {
+      y: function () { return Math.round(window.innerHeight * 0.2); },
+      ease: 'none',
+      scrollTrigger: { trigger: section, start: 'top bottom', end: 'bottom top', scrub: true }
+    });
+
+    /* thin line-mask wipe crosses once on enter */
+    gsap.fromTo('.cta-wipe', { scaleX: 0 }, {
+      scaleX: 1, duration: 1, ease: 'power3.out',
+      scrollTrigger: { trigger: section, start: 'top 65%', once: true },
+      onComplete: function () { gsap.to('.cta-wipe', { opacity: 0, duration: 0.6, ease: 'power2.out' }); }
+    });
+
+    /* oversized headline, chars lifting behind clipped lines */
+    try {
+      if (window.SplitText) {
+        var split = new SplitText('#cta-title', { type: 'chars' });
+        gsap.from(split.chars, {
+          yPercent: 110, duration: 1.1, ease: 'power4.out', stagger: 0.03,
+          willChange: 'transform', clearProps: 'willChange',
+          scrollTrigger: { trigger: section, start: 'top 70%', once: true }
+        });
+      } else {
+        gsap.from('#cta-title .line', {
+          yPercent: 110, duration: 1.1, ease: 'power4.out', stagger: 0.06,
+          scrollTrigger: { trigger: section, start: 'top 70%', once: true }
+        });
+      }
+    } catch (e) {
+      gsap.from('#cta-title', {
+        opacity: 0, duration: 0.9, ease: 'power3.out',
+        scrollTrigger: { trigger: section, start: 'top 70%', once: true }
+      });
+    }
+
+    gsap.from(['.cta-copy', '.cta-actions'], {
+      y: 26, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08, delay: 0.2,
+      willChange: 'transform', clearProps: 'willChange',
+      scrollTrigger: { trigger: section, start: 'top 65%', once: true }
+    });
+  }
+}
+
+/* ============================================================
+   CUSTOM CURSOR — 12px dot + 40px trailing ring, desktop only
+   ============================================================ */
+function initCursor() {
+  if (prefersReduced || !window.gsap) return;
+  if (!window.matchMedia('(pointer: fine)').matches) return;
+
+  var mm = gsap.matchMedia();
+  mm.add('(min-width: 900px)', function () {
+    var dot = document.createElement('div');
+    var ring = document.createElement('div');
+    dot.className = 'cursor-dot';
+    ring.className = 'cursor-ring';
+    document.body.appendChild(dot);
+    document.body.appendChild(ring);
+    document.body.classList.add('has-cursor');
+
+    var dX = gsap.quickTo(dot, 'x', { duration: 0.12, ease: 'power3.out' });
+    var dY = gsap.quickTo(dot, 'y', { duration: 0.12, ease: 'power3.out' });
+    var rX = gsap.quickTo(ring, 'x', { duration: 0.45, ease: 'power3.out' });
+    var rY = gsap.quickTo(ring, 'y', { duration: 0.45, ease: 'power3.out' });
+
+    var move = function (e) {
+      dX(e.clientX); dY(e.clientY);
+      rX(e.clientX); rY(e.clientY);
+    };
+    var over = function (e) {
+      var hit = e.target.closest ? e.target.closest('a, button, [data-magnetic]') : null;
+      gsap.to(ring, {
+        scale: hit ? 1.8 : 1,
+        opacity: hit ? 0.6 : 0.35,
+        duration: 0.35, ease: 'power3.out', overwrite: true
+      });
+    };
+    window.addEventListener('mousemove', move, { passive: true });
+    window.addEventListener('mouseover', over, { passive: true });
+
+    return function () {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseover', over);
+      document.body.classList.remove('has-cursor');
+      if (dot.parentNode) dot.parentNode.removeChild(dot);
+      if (ring.parentNode) ring.parentNode.removeChild(ring);
+    };
+  });
+}
+
+/* ============================================================
    INIT
    ============================================================ */
 function init() {
@@ -535,6 +638,8 @@ function init() {
   initGallery();
   initStats();
   initFaq();
+  initCta();
+  initCursor();
   headerOnScroll();
   runPreloader();
 }

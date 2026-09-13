@@ -12,6 +12,8 @@
 </head>
 <body class="locked">
 
+<a class="skip-link" href="#main">Skip to content</a>
+
 <div id="progress-bar" aria-hidden="true"></div>
 <div id="grain" aria-hidden="true"></div>
 
@@ -49,6 +51,7 @@
   </nav>
 </div>
 
+<main id="main">
 <!-- ============ HERO ============ -->
 <section class="hero" id="top">
   <div class="hero-bg" aria-hidden="true">
@@ -66,7 +69,7 @@
       </h1>
       <p class="hero-sub" data-hero>Backlog Killer turns your Physics Wallah lecture backlog into a day-by-day kill plan — synced to your Lakshya NEET 2027 timetable, reshuffling itself every day you miss, until the counter hits zero.</p>
       <div class="hero-ctas" data-hero>
-        <a href="#tracker" class="btn btn-primary" data-magnetic>Start killing backlog</a>
+        <a href="tracker.html" class="btn btn-primary" data-magnetic>Start killing backlog</a>
         <a href="#method" class="btn btn-ghost" data-magnetic>See the method</a>
       </div>
       <p class="hero-meta" data-hero>Lakshya NEET 2027 · 12 live lectures a week · plan reshuffles daily</p>
@@ -122,7 +125,7 @@
       <p class="eyebrow reveal">The arsenal</p>
       <h2 class="duo-title reveal">BUILT LIKE A WAR ROOM.</h2>
       <p class="duo-copy reveal">Every feature exists for one number — lectures left. If a feature doesn't shrink it, it's not in the app.</p>
-      <a href="#start" class="btn btn-primary" data-magnetic>Open the tracker</a>
+      <a href="tracker.html" class="btn btn-primary" data-magnetic>Open the tracker</a>
     </div>
     <div class="duo-right">
       <article class="card">
@@ -156,6 +159,7 @@
 
 <!-- ============ HORIZONTAL SCROLL: THE WEEK ============ -->
 <section class="hscroll" id="timetable">
+  <h2 class="sr-only">The week, hour by hour</h2>
   <div class="h-wrap">
     <div class="h-row" id="h-row">
       <div class="h-panel">
@@ -318,6 +322,66 @@
     </div>
   </div>
 </section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="cta" id="start">
+  <div class="cta-bg" aria-hidden="true">
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
+  </div>
+  <div class="cta-wipe" aria-hidden="true"></div>
+  <div class="container cta-inner">
+    <h2 class="cta-title" id="cta-title">
+      <span class="line">ONE LECTURE.</span>
+      <span class="line">RIGHT NOW.</span>
+    </h2>
+    <p class="cta-copy">Nobody is coming to clear it for you. Open the tracker, log tonight's two lectures, and let tomorrow-you inherit a smaller war.</p>
+    <div class="cta-actions">
+      <a href="tracker.html" class="btn btn-primary btn-big" data-magnetic>Open the tracker</a>
+      <a class="quiet-link" href="#method">or re-read the method</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="f-brand">
+        <div class="logo">BACKLOG<span>KILLER</span></div>
+        <p>A war room for PW aspirants — track every lecture, kill the backlog, keep the streak.</p>
+      </div>
+      <nav class="f-col" aria-label="Site">
+        <h3>Site</h3>
+        <a class="f-link" href="#method">Method</a>
+        <a class="f-link" href="#timetable">The week</a>
+        <a class="f-link" href="#tracker">Arsenal</a>
+        <a class="f-link" href="#faq">FAQ</a>
+      </nav>
+      <nav class="f-col" aria-label="Tracker">
+        <h3>Tracker</h3>
+        <a class="f-link" href="tracker.html">Open tracker</a>
+        <a class="f-link" href="tracker.html">Live schedule</a>
+        <a class="f-link" href="tracker.html">Kill plan</a>
+        <a class="f-link" href="tracker.html">Backup &amp; restore</a>
+      </nav>
+      <nav class="f-col" aria-label="Batch">
+        <h3>Batch</h3>
+        <a class="f-link" href="https://www.pw.live" target="_blank" rel="noopener">Physics Wallah</a>
+        <a class="f-link" href="https://github.com/smartstopwach/backlog-killer" target="_blank" rel="noopener">GitHub repo</a>
+        <span class="f-note">Lakshya NEET 2027</span>
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Backlog Killer — built between lectures.</p>
+      <div class="f-legal">
+        <a class="f-link" href="https://github.com/smartstopwach/backlog-killer" target="_blank" rel="noopener">GitHub</a>
+        <a class="f-link" href="#top">Back to top</a>
+      </div>
+    </div>
+  </div>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
