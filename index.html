@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backlog Killer ⚡ Clear your PW backlogs</title>
+<style>
+  :root{
+    --bg:#0b1020; --bg2:#111831; --card:#161f3d; --card2:#1c2750;
+    --text:#e8ecff; --muted:#8b96c9; --accent:#5b8cff; --accent2:#ffd166;
+    --good:#34d399; --bad:#f87171; --border:#26335e;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{
+    font-family:'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%, #1b2a5e 0%, var(--bg) 55%) fixed, var(--bg);
+    color:var(--text); min-height:100vh;
+  }
+  .wrap{max-width:1050px; margin:0 auto; padding:20px 16px 60px}
+  header{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0 18px; flex-wrap:wrap}
+  .logo{display:flex; align-items:center; gap:10px; font-size:1.45rem; font-weight:800; letter-spacing:.3px}
+  .logo .bolt{font-size:1.6rem; filter:drop-shadow(0 0 10px rgba(255,209,102,.6))}
+  .logo small{display:block; font-size:.72rem; font-weight:500; color:var(--muted); letter-spacing:.4px}
+  .streak{background:linear-gradient(135deg,#2a1a05,#3d2a08); border:1px solid #7a5b1e; color:#ffd166;
+    padding:8px 14px; border-radius:999px; font-weight:700; font-size:.95rem; white-space:nowrap}
+  .card{background:linear-gradient(180deg,var(--card),var(--bg2)); border:1px solid var(--border);
+    border-radius:var(--radius); padding:18px; box-shadow:0 8px 24px rgba(0,0,0,.25)}
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px}
+  .stat .num{font-size:1.9rem; font-weight:800}
+  .stat .lbl{color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.8px; margin-top:2px}
+  .stat.pending .num{color:var(--accent2)} .stat.done .num{color:var(--good)}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px}
+  @media (max-width:820px){ .grid2{grid-template-columns:1fr} }
+  h2{font-size:1.05rem; margin-bottom:12px; display:flex; align-items:center; gap:8px}
+  h2 .tag{font-size:.7rem; background:var(--card2); color:var(--muted); padding:3px 8px; border-radius:999px; font-weight:600}
+  .subbar{margin-bottom:12px}
+  .subbar .row{display:flex; justify-content:space-between; font-size:.9rem; margin-bottom:5px}
+  .subbar .row b{font-weight:600}
+  .bar{height:10px; background:#0e1530; border-radius:999px; overflow:hidden}
+  .bar i{display:block; height:100%; border-radius:999px; transition:width .4s ease}
+  label{display:block; font-size:.78rem; color:var(--muted); margin:10px 0 4px; text-transform:uppercase; letter-spacing:.6px}
+  input,select,button{font:inherit}
+  input[type=text],input[type=number],select{
+    width:100%; background:#0e1530; color:var(--text); border:1px solid var(--border);
+    border-radius:10px; padding:10px 12px; outline:none}
+  input:focus,select:focus{border-color:var(--accent)}
+  .btn{cursor:pointer; border:none; border-radius:10px; padding:10px 16px; font-weight:700; transition:transform .08s, filter .15s}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),#7c5bff); color:#fff}
+  .btn.kill{background:linear-gradient(135deg,#ff5b5b,#ff9d2e); color:#fff; font-size:1rem}
+  .btn.ghost{background:var(--card2); color:var(--text); border:1px solid var(--border)}
+  .btn:hover{filter:brightness(1.1)}
+  .btn.sm{padding:5px 10px; font-size:.85rem; border-radius:8px}
+  .formrow{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .actions{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap}
+  .filters{display:flex; gap:8px; margin:0 0 12px; flex-wrap:wrap}
+  .chip{padding:6px 13px; border-radius:999px; background:var(--card2); border:1px solid var(--border);
+    color:var(--muted); cursor:pointer; font-size:.85rem; font-weight:600}
+  .chip.active{background:var(--accent); border-color:var(--accent); color:#fff}
+  .item{display:flex; align-items:center; gap:12px; background:var(--card2); border:1px solid var(--border);
+    border-radius:12px; padding:12px 14px; margin-bottom:10px}
+  .item .dot{width:10px; height:10px; border-radius:50%; flex:0 0 auto}
+  .item .info{flex:1; min-width:0}
+  .item .info .name{font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .item .info .sub{font-size:.78rem; color:var(--muted)}
+  .minibar{height:6px; background:#0e1530; border-radius:999px; margin-top:6px; overflow:hidden}
+  .minibar i{display:block; height:100%; border-radius:999px}
+  .counter{display:flex; align-items:center; gap:8px; font-weight:800}
+  .counter button{width:32px; height:32px; border-radius:9px; border:1px solid var(--border);
+    background:#0e1530; color:var(--text); font-size:1.1rem; cursor:pointer; font-weight:800}
+  .counter button:hover{border-color:var(--accent); color:var(--accent)}
+  .del{background:none; border:none; color:#5b648c; cursor:pointer; font-size:1.05rem; padding:4px}
+  .del:hover{color:var(--bad)}
+  .empty{text-align:center; color:var(--muted); padding:34px 10px; line-height:1.7}
+  .empty .big{font-size:2.4rem}
+  .plan-banner{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:16px;
+    background:linear-gradient(135deg,#3d1414,#40230a); border:1px solid #8c4a2a}
+  .plan-banner .txt{flex:1; min-width:220px}
+  .plan-banner .txt b{color:var(--accent2)}
+  .plan-banner .txt small{display:block; color:#d8b48e; margin-top:3px}
+  dialog{background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:16px;
+    padding:22px; width:min(560px, 92vw)}
+  dialog::backdrop{background:rgba(4,8,20,.7); backdrop-filter:blur(3px)}
+  .plan-day{background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:10px 13px;
+    margin-bottom:8px; font-size:.9rem}
+  .plan-day b{color:var(--accent2)}
+  .plan-day .tasks{color:var(--muted); margin-top:3px; line-height:1.5}
+  .today-pill{font-size:.68rem; background:var(--good); color:#04281a; border-radius:999px; padding:2px 8px; font-weight:800; margin-left:6px}
+  .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1d2b57; border:1px solid var(--accent);
+    color:var(--text); padding:11px 20px; border-radius:12px; font-weight:600; opacity:0; pointer-events:none; transition:.3s; z-index:50}
+  .toast.show{opacity:1}
+  footer{text-align:center; color:#5b648c; font-size:.8rem; margin-top:26px}
+  .celebrate{text-align:center; padding:40px 20px}
+  .celebrate .big{font-size:3rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">
+      <span class="bolt">⚡</span>
+      <div>Backlog Killer
+        <small>for PW / JEE / NEET aspirants — no lecture left behind</small>
+      </div>
+    </div>
+    <div class="streak" id="streakBadge">🔥 0 day streak</div>
+  </header>
+
+  <div class="stats">
+    <div class="card stat"><div class="num" id="stTotal">0</div><div class="lbl">Total lectures</div></div>
+    <div class="card stat done"><div class="num" id="stDone">0</div><div class="lbl">Done</div></div>
+    <div class="card stat pending"><div class="num" id="stPending">0</div><div class="lbl">Backlog left</div></div>
+    <div class="card stat"><div class="num" id="stDays">—</div><div class="lbl">Days to zero</div></div>
+  </div>
+
+  <div class="card plan-banner" id="planBanner" style="display:none">
+    <div class="txt" id="planText"></div>
+    <button class="btn kill" onclick="openPlan(true)">⚔️ Update Kill Plan</button>
+    <button class="btn ghost sm" onclick="clearPlan()">✕</button>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>📊 Subject progress</h2>
+      <div id="subjectBars"></div>
+    </div>
+
+    <div class="card">
+      <h2>➕ Add backlog <span class="tag">chapter • lectures pending</span></h2>
+      <form id="addForm" onsubmit="return addItem(event)">
+        <label>Subject</label>
+        <select id="fSubject"></select>
+        <label>Chapter / topic</label>
+        <input type="text" id="fChapter" placeholder="e.g. Kinematics, GOC, Trigonometry…" required>
+        <div class="formrow">
+          <div>
+            <label>Lectures pending</label>
+            <input type="number" id="fCount" min="1" max="200" value="1" required>
+          </div>
+          <div>
+            <label>Daily goal (lec/day)</label>
+            <input type="number" id="fGoal" min="1" max="50" onchange="setGoal(this.value)">
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" type="submit">Add to backlog</button>
+          <button class="btn kill" type="button" onclick="openPlan()">⚔️ Make Kill Plan</button>
+        </div>
+      </form>
+      <div class="actions" style="margin-top:10px">
+        <button class="btn ghost sm" onclick="exportData()">⬇ Backup</button>
+        <button class="btn ghost sm" onclick="document.getElementById('importFile').click()">⬆ Restore</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)">
+        <button class="btn ghost sm" onclick="resetAll()">🗑 Reset all</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🎯 Your backlog</h2>
+    <div class="filters">
+      <div class="chip active" data-f="all" onclick="setFilter('all',this)">All</div>
+      <div class="chip" data-f="pending" onclick="setFilter('pending',this)">Pending</div>
+      <div class="chip" data-f="done" onclick="setFilter('done',this)">Completed</div>
+    </div>
+    <div id="itemList"></div>
+  </div>
+
+  <footer>Backlog Killer · data stays in your browser (localStorage) · padhai chhodna mana hai 📚</footer>
+</div>
+
+<dialog id="planDialog">
+  <h2 style="margin-bottom:4px">⚔️ Kill Plan</h2>
+  <p style="color:var(--muted); font-size:.88rem; margin-bottom:12px" id="planSummary"></p>
+  <label>In how many days do you want to finish the backlog?</label>
+  <div class="formrow" style="align-items:end">
+    <input type="number" id="planDays" min="1" max="365" value="14">
+    <button class="btn kill" onclick="buildPlan()">Generate plan</button>
+  </div>
+  <div style="margin-top:16px; max-height:44vh; overflow-y:auto" id="planOutput"></div>
+  <div class="actions">
+    <button class="btn primary" id="savePlanBtn" style="display:none" onclick="savePlan()">💾 Save plan</button>
+    <button class="btn ghost" onclick="document.getElementById('planDialog').close()">Close</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const LS_KEY = 'backlogKiller.v1';
+const todayISO = () => new Date().toLocaleDateString('en-CA');
+
+const TRACKS = {
+  JEE:   [['Physics','#5b8cff'], ['Chemistry','#34d399'], ['Maths','#ffd166']],
+  NEET:  [['Physics','#5b8cff'], ['Chemistry','#34d399'], ['Biology','#f472b6']],
+  FOUND: [['Physics','#5b8cff'], ['Chemistry','#34d399'], ['Maths','#ffd166'], ['Biology','#f472b6']]
+};
+
+let state = load();
+let filter = 'all';
+let draftPlan = null;
+
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  // first run — seed with PW-style subjects (JEE by default)
+  const s = { dailyGoal:6, subjects:[], items:[], log:{}, plan:null };
+  TRACKS.JEE.forEach(([n,c]) => s.subjects.push({id:uid(), name:n, color:c}));
+  return s;
+}
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+/* ---------- derived ---------- */
+const totals = () => {
+  let total=0, done=0;
+  state.items.forEach(i => { total += i.total; done += i.done; });
+  return {total, done, pending: total - done};
+};
+function subjectStats(){
+  const m = {};
+  state.subjects.forEach(s => m[s.id] = {total:0, done:0});
+  state.items.forEach(i => {
+    if(!m[i.subjectId]) m[i.subjectId] = {total:0, done:0};
+    m[i.subjectId].total += i.total; m[i.subjectId].done += i.done;
+  });
+  return m;
+}
+function streak(){
+  let d = new Date(), count = 0;
+  const g = state.dailyGoal;
+  // today counts if met, otherwise start checking from yesterday
+  if((state.log[todayISO()]||0) >= g) count++;
+  d.setDate(d.getDate()-1);
+  for(let k=0;k<400;k++){
+    const key = d.toLocaleDateString('en-CA');
+    if((state.log[key]||0) >= g){ count++; d.setDate(d.getDate()-1); } else break;
+  }
+  return count;
+}
+
+/* ---------- actions ---------- */
+function addItem(e){
+  e.preventDefault();
+  const sub = document.getElementById('fSubject').value;
+  const chapter = document.getElementById('fChapter').value.trim();
+  const count = Math.max(1, parseInt(document.getElementById('fCount').value)||1);
+  if(!chapter) return false;
+  state.items.unshift({id:uid(), subjectId:sub, chapter, total:count, done:0, createdAt:todayISO()});
+  document.getElementById('fChapter').value=''; document.getElementById('fCount').value='1';
+  save(); render(); toast('Backlog added — now go kill it ⚔️');
+  return false;
+}
+function bump(id, delta){
+  const it = state.items.find(x=>x.id===id); if(!it) return;
+  const before = it.done;
+  it.done = Math.min(it.total, Math.max(0, it.done + delta));
+  const diff = it.done - before;
+  if(diff !== 0){
+    const key = todayISO();
+    state.log[key] = Math.max(0, (state.log[key]||0) + diff);
+  }
+  if(it.done === it.total && diff > 0) toast(`"${it.chapter}" cleared ✅ Shabaash!`);
+  save(); render();
+}
+function removeItem(id){
+  state.items = state.items.filter(x=>x.id!==id);
+  save(); render(); toast('Entry removed');
+}
+function setGoal(v){
+  state.dailyGoal = Math.max(1, parseInt(v)||6);
+  save(); render();
+}
+function setFilter(f, el){
+  filter = f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+function resetAll(){
+  if(!confirm('Delete ALL backlog data and start fresh?')) return;
+  localStorage.removeItem(LS_KEY); state = load(); save(); render();
+}
+
+/* ---------- kill plan ---------- */
+function openPlan(updateOnly){
+  const {pending} = totals();
+  const dlg = document.getElementById('planDialog');
+  document.getElementById('planSummary').textContent =
+    pending === 0 ? 'No backlog — you are fully caught up! 🎉'
+                  : `You have ${pending} lectures pending. At your daily goal of ${state.dailyGoal}/day that's ~${Math.ceil(pending/state.dailyGoal)} days — or pick a tighter deadline:`;
+  document.getElementById('planOutput').innerHTML='';
+  document.getElementById('savePlanBtn').style.display='none';
+  draftPlan = null;
+  dlg.showModal();
+}
+function buildPlan(){
+  const {pending} = totals();
+  if(pending===0){ toast('Nothing to kill — backlog is 0 🎉'); return; }
+  const days = Math.max(1, parseInt(document.getElementById('planDays').value)||14);
+  const perDay = Math.ceil(pending/days);
+  // distribute pending lectures day by day
+  const queue = [];
+  state.items.forEach(it=>{ if(it.done<it.total) queue.push({chapter:it.chapter, subjectId:it.subjectId, left:it.total-it.done}); });
+  const planDays = [];
+  let start = new Date();
+  for(let d=0; d<days && queue.length; d++){
+    const date = new Date(start); date.setDate(start.getDate()+d);
+    let capacity = perDay, tasks=[];
+    while(capacity>0 && queue.length){
+      const t = queue[0];
+      const take = Math.min(t.left, capacity);
+      tasks.push({subjectId:t.subjectId, chapter:t.chapter, n:take});
+      t.left -= take; capacity -= take;
+      if(t.left===0) queue.shift();
+    }
+    planDays.push({date: date.toLocaleDateString('en-CA'), label: date.toLocaleDateString('en-IN',{weekday:'short', day:'numeric', month:'short'}), tasks});
+  }
+  draftPlan = {startISO: todayISO(), days, perDay, pending, created: todayISO(), schedule: planDays};
+  renderDraftPlan();
+}
+function renderDraftPlan(){
+  const out = document.getElementById('planOutput');
+  out.innerHTML = draftPlan.schedule.map((d,i)=>`
+    <div class="plan-day">
+      <b>Day ${i+1}</b> · ${d.label}
+      <div class="tasks">${d.tasks.map(t=>`${subjName(t.subjectId)} — ${esc(t.chapter)} (${t.n} lec)`).join('<br>')}</div>
+    </div>`).join('');
+  document.getElementById('savePlanBtn').style.display='inline-block';
+}
+function savePlan(){
+  state.plan = draftPlan; save();
+  document.getElementById('planDialog').close();
+  toast('Kill Plan locked in 🔒 No excuses now!');
+  render();
+}
+function clearPlan(){ state.plan=null; save(); render(); }
+
+/* ---------- render ---------- */
+function subjName(id){ const s=state.subjects.find(x=>x.id===id); return s?s.name:'—'; }
+function subjColor(id){ const s=state.subjects.find(x=>x.id===id); return s?s.color:'#888'; }
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function render(){
+  const {total,done,pending} = totals();
+  document.getElementById('stTotal').textContent = total;
+  document.getElementById('stDone').textContent = done;
+  document.getElementById('stPending').textContent = pending;
+  document.getElementById('stDays').textContent = pending===0 ? '0 🎉' : Math.ceil(pending/state.dailyGoal);
+  document.getElementById('fGoal').value = state.dailyGoal;
+
+  const st = streak();
+  document.getElementById('streakBadge').textContent = `🔥 ${st} day streak`;
+
+  // subject select
+  const sel = document.getElementById('fSubject');
+  const cur = sel.value;
+  sel.innerHTML = state.subjects.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  if(cur && state.subjects.some(s=>s.id===cur)) sel.value = cur;
+
+  // subject bars
+  const stats = subjectStats();
+  const bars = document.getElementById('subjectBars');
+  if(total===0){
+    bars.innerHTML = `<div class="empty"><div class="big">📚</div>Add your pending PW chapters below.<br>Every lecture you log here is one step closer to zero.</div>`;
+  }else{
+    bars.innerHTML = state.subjects.filter(s=>stats[s.id] && stats[s.id].total>0).map(s=>{
+      const x = stats[s.id], pct = x.total? Math.round(x.done/x.total*100):0;
+      return `<div class="subbar">
+        <div class="row"><b>${esc(s.name)}</b><span>${x.done}/${x.total} · ${pct}%</span></div>
+        <div class="bar"><i style="width:${pct}%; background:${s.color}"></i></div>
+      </div>`;
+    }).join('') || `<div class="empty">No lectures logged yet.</div>`;
+  }
+
+  // plan banner
+  const banner = document.getElementById('planBanner');
+  if(state.plan){
+    const p = state.plan;
+    const start = new Date(p.startISO);
+    const elapsed = Math.max(0, Math.floor((new Date(todayISO()) - start)/86400000));
+    const expected = Math.min(p.pending, elapsed * p.perDay);
+    banner.style.display='flex';
+    document.getElementById('planText').innerHTML =
+      `⚔️ <b>Kill Plan active:</b> finish ${p.pending} lectures in ${p.days} days (${p.perDay}/day). ` +
+      `<small>Started ${new Date(p.startISO).toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — day ${Math.min(elapsed+1,p.days)} of ${p.days}. Expected done by now: ${expected}.</small>`;
+  }else banner.style.display='none';
+
+  // items
+  const list = document.getElementById('itemList');
+  let items = state.items;
+  if(filter==='pending') items = items.filter(i=>i.done<i.total);
+  if(filter==='done') items = items.filter(i=>i.done===i.total);
+  if(items.length===0){
+    list.innerHTML = total===0
+      ? `<div class="empty"><div class="big">🗡️</div>No backlog entries yet. Add your first pending chapter above!</div>`
+      : `<div class="empty"><div class="big">${filter==='done'?'🌱':'🎉'}</div>${filter==='done'?'Nothing completed yet — start grinding!':'Everything is cleared. Zero backlog. Legend! 🏆'}</div>`;
+  }else{
+    list.innerHTML = items.map(it=>{
+      const pct = Math.round(it.done/it.total*100);
+      const c = subjColor(it.subjectId);
+      const finished = it.done===it.total;
+      return `<div class="item" ${finished?'style="opacity:.65"':''}>
+        <span class="dot" style="background:${c}"></span>
+        <div class="info">
+          <div class="name">${finished?'✅ ':''}${esc(it.chapter)}</div>
+          <div class="sub">${esc(subjName(it.subjectId))} · ${it.total-it.done===0?'cleared':(it.total-it.done)+' lectures left'}</div>
+          <div class="minibar"><i style="width:${pct}%; background:${c}"></i></div>
+        </div>
+        <div class="counter">
+          <button onclick="bump('${it.id}',-1)" title="undo one lecture">−</button>
+          <span>${it.done}/${it.total}</span>
+          <button onclick="bump('${it.id}',1)" title="watched one lecture">+</button>
+        </div>
+        <button class="del" onclick="removeItem('${it.id}')" title="delete entry">✕</button>
+      </div>`;
+    }).join('');
+  }
+}
+
+/* ---------- backup / restore ---------- */
+function exportData(){
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'backlog-killer-backup.json';
+  a.click();
+}
+function importData(input){
+  const f = input.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{ state = JSON.parse(r.result); save(); render(); toast('Backup restored ✅'); }
+    catch(e){ toast('Invalid backup file ❌'); }
+  };
+  r.readAsText(f);
+  input.value='';
+}
+
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+render();
+</script>
+</body>
+</html>
