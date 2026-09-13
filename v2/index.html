@@ -54,6 +54,7 @@
 <main id="main">
 <!-- ============ HERO ============ -->
 <section class="hero" id="top">
+  <canvas id="hero-3d" class="hero-3d" aria-hidden="true"></canvas>
   <div class="hero-bg" aria-hidden="true">
     <div class="hero-dots"></div>
     <div class="glow glow-a"></div>
@@ -64,10 +65,10 @@
     <div class="hero-copy" id="hero-copy">
       <p class="eyebrow" data-hero>बैकलॉग ख़त्म · A PW war room</p>
       <h1 class="hero-title" id="hero-title">
-        <span class="line">KILL THE</span>
-        <span class="line">BACKLOG.</span>
+        <span class="line">BACKLOG IS</span>
+        <span class="line">A DEBT.</span>
       </h1>
-      <p class="hero-sub" data-hero>Backlog Killer turns your Physics Wallah lecture backlog into a day-by-day kill plan — synced to your Lakshya NEET 2027 timetable, reshuffling itself every day you miss, until the counter hits zero.</p>
+      <p class="hero-sub" data-hero>It counts the two lectures PW adds to your day, prices what you skipped, and hands you tomorrow&#39;s exact target. Miss a day and it re-deals the remaining lectures across the days you have left.</p>
       <div class="hero-ctas" data-hero>
         <a href="tracker.html" class="btn btn-primary" data-magnetic>Start killing backlog</a>
         <a href="#method" class="btn btn-ghost" data-magnetic>See the method</a>
@@ -109,10 +110,10 @@
   <div class="story-pin">
     <div class="container story-stage">
       <div class="story-bar" aria-hidden="true"><i id="story-progress"></i></div>
-      <p class="story-line">Lectures pile up faster than you watch.</p>
-      <p class="story-line">Every missed day adds two more.</p>
-      <p class="story-line">Backlog becomes fear. Fear becomes avoidance.</p>
-      <p class="story-line">One plan. One day. Zero left.</p>
+      <p class="story-line">You didn&#39;t fall behind in one day.</p>
+      <p class="story-line">You fell behind one lecture at a time.</p>
+      <p class="story-line">Unwatched lectures become an unopened app.</p>
+      <p class="story-line">So we count them and deal them back.</p>
       <div class="story-count" aria-hidden="true"><span id="story-beat">01</span>/04</div>
     </div>
   </div>
@@ -131,27 +132,27 @@
       <article class="card">
         <span class="idx" aria-hidden="true">01</span>
         <h3>Live lecture sync</h3>
-        <p>Mon–Sat, your two daily lectures enter the backlog on their own — straight from the Lakshya NEET 2027 timetable. Open the app, it's already counted.</p>
+        <p>The timetable does the data entry. Mon–Sat, your two followed-teacher lectures land in the backlog before you even open the app. Nothing to type, nothing to remember.</p>
       </article>
       <article class="card">
         <span class="idx" aria-hidden="true">02</span>
         <h3>Teacher lock</h3>
-        <p>Parallel batches, one teacher per subject: Manish Raj, SKC, Samapti Sinha, Vipin Sharma. Only their lectures count — never double entry.</p>
+        <p>PW runs two teachers per subject in parallel. You follow one. We count one — Manish Raj, SKC, Samapti Sinha or Vipin Sharma. The other batch never touches your numbers.</p>
       </article>
       <article class="card">
         <span class="idx" aria-hidden="true">03</span>
         <h3>Kill plan math</h3>
-        <p>You pick the deadline in days. The app divides remaining lectures by days left and serves today's target every single morning.</p>
+        <p>You say “20 days”. We do one division: remaining lectures by remaining days. That quotient is tomorrow’s target, recalculated every morning. That’s the whole trick.</p>
       </article>
       <article class="card">
         <span class="idx" aria-hidden="true">04</span>
         <h3>Miss-a-day reshuffle</h3>
-        <p>Skip a Tuesday and Wednesday inherits it — silently. The plan never shames you; it just redistributes the load forward.</p>
+        <p>Miss a day and nothing turns red. The undone lectures fold into the days that remain and the target quietly rises by one or two. The plan adjusts; it never lectures you.</p>
       </article>
       <article class="card">
         <span class="idx" aria-hidden="true">05</span>
         <h3>Streak &amp; zero day</h3>
-        <p>Hit the daily goal, keep the flame alive. When the counter finally reads zero, the war ends and the whole site celebrates.</p>
+        <p>Streaks count targets hit, not feelings. When pending finally reads zero, the site says shabaash and stops talking. That’s the only celebration built in.</p>
       </article>
     </div>
   </div>
@@ -271,7 +272,7 @@
           <span class="faq-plus" aria-hidden="true"></span>
         </button>
         <div class="faq-a" id="faqa1" role="region" aria-labelledby="faqq1">
-          <div class="faq-a-inner"><p>No — and it never will ask for your PW login. PW has no public API, so the site tracks your backlog itself: live lectures are auto-added from your batch's weekly timetable, and everything else you add manually. Your credentials stay yours.</p></div>
+          <div class="faq-a-inner"><p>No — and it never will ask for your PW login. PW has no public API, so watch-progress can never auto-import; live lectures are added from your batch’s weekly timetable instead, and you log the rest with one tap. If you watch on a different device, we won’t know until you press +.</p></div>
         </div>
       </div>
       <div class="faq-item">
@@ -289,7 +290,7 @@
           <span class="faq-plus" aria-hidden="true"></span>
         </button>
         <div class="faq-a" id="faqa3" role="region" aria-labelledby="faqq3">
-          <div class="faq-a-inner"><p>No account. Everything lives in your browser's localStorage on your device. The Backup button downloads a JSON file so you can move to another phone or recover after clearing browser data.</p></div>
+          <div class="faq-a-inner"><p>No account — which is also the limitation: everything lives in this browser’s localStorage, so clearing site data without a backup deletes your backlog. The Backup button downloads a JSON; that’s your side of the deal.</p></div>
         </div>
       </div>
       <div class="faq-item">
@@ -316,7 +317,7 @@
           <span class="faq-plus" aria-hidden="true"></span>
         </button>
         <div class="faq-a" id="faqa6" role="region" aria-labelledby="faqq6">
-          <div class="faq-a-inner"><p>Yes, it's built mobile-first from 375px up — the tracker is where you'll actually use it, between classes. You need internet for the first load; after that the app itself is a single file in your browser.</p></div>
+          <div class="faq-a-inner"><p>Yes, from 375px up — the tracker is the part you’ll use between classes. Honest caveats: it needs internet on first load for fonts and libraries, and it doesn’t sync between two phones. One device, one backlog.</p></div>
         </div>
       </div>
     </div>
@@ -387,6 +388,7 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/SplitText.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1/dist/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
 <script src="main.js"></script>
 </body>
 </html>
