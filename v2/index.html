@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backlog Killer — PW Backlog War Room</title>
+<meta name="description" content="Turn your Physics Wallah lecture backlog into a day-by-day kill plan. Built for Lakshya NEET 2027 aspirants.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mukta:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="locked">
+
+<div id="progress-bar" aria-hidden="true"></div>
+<div id="grain" aria-hidden="true"></div>
+
+<!-- ============ PRELOADER ============ -->
+<div id="preloader" aria-hidden="true">
+  <div class="pre-half pre-top"></div>
+  <div class="pre-half pre-bottom"></div>
+  <div class="pre-content" id="pre-content">
+    <div class="pre-word">BACK<em>LOG</em></div>
+    <div class="pre-label" id="pre-label">syncing timetable</div>
+  </div>
+  <div class="pre-count" id="pre-count">000</div>
+</div>
+
+<!-- ============ HEADER ============ -->
+<header id="site-header">
+  <div class="container header-inner">
+    <a class="logo" href="#top" data-magnetic> BACKLOG<span>KILLER</span></a>
+    <nav class="desktop-nav" aria-label="Primary">
+      <a href="#method">Method</a>
+      <a href="#timetable">Timetable</a>
+      <a href="#tracker">Tracker</a>
+    </nav>
+    <a href="#start" class="btn btn-primary btn-sm" data-magnetic>Start killing</a>
+    <button id="menu-btn" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
+  </div>
+</header>
+
+<div id="mobile-menu" aria-hidden="true">
+  <nav aria-label="Mobile">
+    <a href="#method"><span class="idx">01</span>Method</a>
+    <a href="#timetable"><span class="idx">02</span>Timetable</a>
+    <a href="#tracker"><span class="idx">03</span>Tracker</a>
+    <a href="#start"><span class="idx">04</span>Start</a>
+  </nav>
+</div>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="top">
+  <div class="hero-bg" aria-hidden="true">
+    <div class="hero-dots"></div>
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
+  </div>
+
+  <div class="container hero-inner">
+    <div class="hero-copy" id="hero-copy">
+      <p class="eyebrow" data-hero>बैकलॉग ख़त्म · A PW war room</p>
+      <h1 class="hero-title" id="hero-title">
+        <span class="line">KILL THE</span>
+        <span class="line">BACKLOG.</span>
+      </h1>
+      <p class="hero-sub" data-hero>Backlog Killer turns your Physics Wallah lecture backlog into a day-by-day kill plan — synced to your Lakshya NEET 2027 timetable, reshuffling itself every day you miss, until the counter hits zero.</p>
+      <div class="hero-ctas" data-hero>
+        <a href="#tracker" class="btn btn-primary" data-magnetic>Start killing backlog</a>
+        <a href="#method" class="btn btn-ghost" data-magnetic>See the method</a>
+      </div>
+      <p class="hero-meta" data-hero>Lakshya NEET 2027 · 12 live lectures a week · plan reshuffles daily</p>
+    </div>
+
+    <div class="hero-float" id="hero-float" aria-hidden="true">
+      <div class="hero-float-mouse" id="hero-float-mouse">
+        <div class="float-card" id="float-card">
+          <div class="float-num">12</div>
+          <div class="float-label">live lectures every week — auto-synced straight from your PW timetable</div>
+          <div class="float-tags">
+            <span>PHY · Manish Raj</span><span>OC · SKC</span><span>ZOO · Samapti</span><span>BOT · Vipin</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-hint" id="scroll-hint" aria-hidden="true">
+    <span class="hint-line" id="hint-line"></span>
+    <span class="hint-word">SCROLL</span>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/SplitText.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1/dist/lenis.min.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
