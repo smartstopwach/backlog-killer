@@ -115,6 +115,16 @@
     <div class="card stat"><div class="num" id="stDays">—</div><div class="lbl">Days to zero</div></div>
   </div>
 
+  <div class="card" style="margin-bottom:16px">
+    <h2 style="justify-content:space-between; flex-wrap:wrap">📆 Live Weekly Schedule
+      <span class="tag">Lakshya NEET 2027 · 29 Jun – 22 Nov 2026</span>
+    </h2>
+    <p style="color:var(--muted); font-size:.85rem">🎓 <b style="color:var(--text)">Mere teachers (parallel batch mein se):</b> Phy — <b style="color:var(--accent2)">Manish Raj Sir</b> · OC — <b style="color:var(--accent2)">SKC Sir</b> · Zoo — <b style="color:var(--accent2)">Samapti Sinha Mam</b> · Bot — <b style="color:var(--accent2)">Vipin Sharma Sir</b></p>
+    <p style="color:var(--muted); font-size:.85rem; margin-top:4px">📡 Sirf inki lectures count hoti hain — Mon–Sat ~<b id="inflowNote" style="color:var(--accent2)">2</b>/day backlog mein auto-add, app kholte hi missed days sync. (Input <b>0</b> = sab live attend kar rahe ho, auto-add off.)</p>
+    <div id="weekView" style="display:none; max-height:320px; overflow-y:auto; margin-top:8px"></div>
+    <button class="btn ghost sm" style="margin-top:10px" onclick="toggleWeek(this)">👀 Show timetable</button>
+  </div>
+
   <div class="card plan-banner" id="planBanner" style="display:none">
     <div class="txt" id="planText"></div>
     <button class="btn ghost sm" onclick="toggleSchedule()">📅 Day-wise schedule</button>
@@ -140,7 +150,7 @@
         <select id="fSubject"></select>
         <label>Chapter / topic</label>
         <input type="text" id="fChapter" placeholder="e.g. Kinematics, GOC, Trigonometry…" required>
-        <div class="formrow">
+        <div class="formrow" style="grid-template-columns:1fr 1fr 1fr">
           <div>
             <label>Lectures pending</label>
             <input type="number" id="fCount" min="1" max="200" value="1" required>
@@ -148,6 +158,10 @@
           <div>
             <label>Daily goal (lec/day)</label>
             <input type="number" id="fGoal" min="1" max="50" onchange="setGoal(this.value)">
+          </div>
+          <div>
+            <label>📡 Live lec/day (0=off)</label>
+            <input type="number" id="fInflow" min="0" max="20" onchange="setInflow(this.value)" title="Har din kitni nayi live lectures backlog mein judti hain">
           </div>
         </div>
         <div class="actions">
@@ -206,17 +220,97 @@ const TRACKS = {
 };
 
 let state = load();
+if(state.inflow == null) state.inflow = 2;
+if(!state.lastSync) state.lastSync = todayISO();
+if(!state.subjects.some(s=>s.name==='Biology'))
+  state.subjects.push({id:uid(), name:'Biology', color:'#f472b6'});
+
 let filter = 'all';
 let draftPlan = null;
+
+/* ---------- Lakshya NEET 2027 weekly live timetable (29 Jun – 22 Nov 2026) ---------- */
+const LIVE_WEEK = {
+ 1:{name:'Monday',   slots:[{t:'4:00–5:45 PM', lec:[['Physics','Manish Raj Sir'],['Physics','Satyam Mudaliar Sir']]},{t:'6:15–7:45 PM', lec:[['Organic Chem','Amit Mahajan Sir'],['Organic Chem','Shubh Karan Choudhary Sir']]}]},
+ 2:{name:'Tuesday',  slots:[{t:'4:00–5:45 PM', lec:[['Physics','Manish Raj Sir'],['Physics','Satyam Mudaliar Sir']]},{t:'6:15–7:45 PM', lec:[['Organic Chem','Amit Mahajan Sir'],['Organic Chem','Shubh Karan Choudhary Sir']]}]},
+ 3:{name:'Wednesday',slots:[{t:'4:00–5:45 PM', lec:[['Physics','Manish Raj Sir'],['Physics','Satyam Mudaliar Sir']]},{t:'6:15–7:45 PM', lec:[['Organic Chem','Amit Mahajan Sir'],['Organic Chem','Shubh Karan Choudhary Sir']]}]},
+ 4:{name:'Thursday', slots:[{t:'4:00–5:45 PM', lec:[['Zoology','Samapti Sinha Mam'],['Zoology','Sujeet Tripathi Sir']]},{t:'6:15–7:45 PM', lec:[['Physics','Manish Raj Sir'],['Physics','Satyam Mudaliar Sir']]}]},
+ 5:{name:'Friday',   slots:[{t:'4:00–5:45 PM', lec:[['Zoology','Samapti Sinha Mam'],['Zoology','Sujeet Tripathi Sir']]},{t:'6:15–7:45 PM', lec:[['Botany','Vipin Sharma Sir'],['Botany',"Dr. Akanksha Agarwal Ma'am"]]}]},
+ 6:{name:'Saturday', slots:[{t:'4:00–5:45 PM', lec:[['Organic Chem','Amit Mahajan Sir'],['Organic Chem','Shubh Karan Choudhary Sir']]},{t:'6:15–7:45 PM', lec:[['Botany','Vipin Sharma Sir'],['Botany',"Dr. Akanksha Agarwal Ma'am"]]}]},
+ 0:{name:'Sunday',   slots:null}
+};
+const DAY_SUBJECTS = {1:['Physics','Chemistry'],2:['Physics','Chemistry'],3:['Physics','Chemistry'],4:['Biology','Physics'],5:['Biology'],6:['Chemistry','Biology'],0:[]};
+const SUBJECT_COLORS = {Physics:'#5b8cff', Chemistry:'#34d399', Biology:'#f472b6'};
+/* User follows ONE teacher per subject (parallel batches) */
+const MY_TEACHERS = {'Physics':'Manish Raj Sir', 'Organic Chem':'Shubh Karan Choudhary Sir', 'Zoology':'Samapti Sinha Mam', 'Botany':'Vipin Sharma Sir'};
+const DISPLAY_TO_SUBJECT = {'Physics':'Physics', 'Organic Chem':'Chemistry', 'Zoology':'Biology', 'Botany':'Biology'};
+
+function ensureSubject(name){
+  let s = state.subjects.find(x=>x.name===name);
+  if(!s){ s = {id:uid(), name, color:SUBJECT_COLORS[name]||'#888'}; state.subjects.push(s); }
+  return s.id;
+}
+/* Auto-add new live lectures for every day since last visit (≈ inflow per day) */
+function liveSync(){
+  const today = todayISO();
+  if(!state.lastSync || state.lastSync >= today){ state.lastSync = today; return; }
+  const d = new Date(state.lastSync);
+  let added = 0;
+  for(;;){
+    d.setDate(d.getDate()+1);
+    const key = d.toLocaleDateString('en-CA');
+    if(key > today) break;
+    const day = LIVE_WEEK[d.getDay()];
+    if(day && day.slots && state.inflow > 0){
+      const seen = {};
+      day.slots.forEach(s=>s.lec.forEach(([disp, teacher])=>{
+        if(teacher !== MY_TEACHERS[disp]) return;       // sirf MERE teacher ki lecture
+        if(seen[disp]) return; seen[disp] = true;        // 1 lecture per chapter (Zoo/Bot alag-alag)
+        const name = DISPLAY_TO_SUBJECT[disp];
+        const label = `Live — ${name} · ${teacher}`;
+        let it = state.items.find(x=>x.chapter===label);
+        if(!it){ it = {id:uid(), subjectId:ensureSubject(name), chapter:label, total:0, done:0, createdAt:key}; state.items.unshift(it); }
+        it.total += 1; added++;
+      }));
+    }
+  }
+  state.lastSync = today;
+  if(added>0){ ensureAutoPlan(); save(); setTimeout(()=>toast(`🔄 Live sync: +${added} new live lectures added`), 400); }
+}
+function setInflow(v){
+  state.inflow = Math.max(0, parseInt(v)||0);
+  ensureAutoPlan(); save(); render();
+}
+function effectiveClear(){ return state.dailyGoal - state.inflow; }
+function toggleWeek(btn){
+  const el = document.getElementById('weekView');
+  const hidden = el.style.display === 'none';
+  el.style.display = hidden ? 'block' : 'none';
+  btn.textContent = hidden ? '🙈 Hide timetable' : '👀 Show timetable';
+  if(hidden) renderWeek();
+}
+function renderWeek(){
+  const el = document.getElementById('weekView');
+  el.innerHTML = [1,2,3,4,5,6,0].map(d=>{
+    const day = LIVE_WEEK[d];
+    const isToday = new Date().getDay()===d;
+    return `<div class="plan-day" ${isToday?'style="border-color:var(--good); background:#12291f"':''}>
+      <b>${day.name}</b>${isToday?'<span class="today-pill">AAJ</span>':''}
+      <div class="tasks">${day.slots ? day.slots.map(s=>{
+        const mine = s.lec.filter(l=>MY_TEACHERS[l[0]]===l[1]);
+        return `${s.t} → ${mine.map(l=>`${l[0]} · <b style="color:var(--accent2)">${l[1]}</b>`).join(' + ')}`;
+      }).join('<br>') : 'Off day — test / DPP / revision 💤'}</div>
+    </div>`;
+  }).join('');
+}
 
 function load(){
   try{
     const raw = localStorage.getItem(LS_KEY);
     if(raw) return JSON.parse(raw);
   }catch(e){}
-  // first run — seed with PW-style subjects (JEE by default)
-  const s = { dailyGoal:6, subjects:[], items:[], log:{}, plan:null };
-  TRACKS.JEE.forEach(([n,c]) => s.subjects.push({id:uid(), name:n, color:c}));
+  // first run — seed with PW NEET subjects (Lakshya NEET 2027)
+  const s = { dailyGoal:6, inflow:2, lastSync:null, subjects:[], items:[], log:{}, plan:null };
+  TRACKS.NEET.forEach(([n,c]) => s.subjects.push({id:uid(), name:n, color:c}));
   return s;
 }
 function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
@@ -301,9 +395,11 @@ function resetAll(){
 function openPlan(updateOnly){
   const {pending} = totals();
   const dlg = document.getElementById('planDialog');
+  const eff = effectiveClear();
   document.getElementById('planSummary').textContent =
     pending === 0 ? 'No backlog — you are fully caught up! 🎉'
-                  : `You have ${pending} lectures pending. At your daily goal of ${state.dailyGoal}/day that's ~${Math.ceil(pending/state.dailyGoal)} days — or pick a tighter deadline:`;
+    : eff <= 0 ? `Warning: goal ${state.dailyGoal}/day ≤ ${state.inflow} new live/day — backlog grow hoga. Pehle goal badhao.`
+    : `You have ${pending} backlog lectures + ${state.inflow} new live daily. Net clear rate ${eff}/day → ~${Math.ceil(pending/eff)} days — or pick a tighter deadline:`;
   document.getElementById('planOutput').innerHTML='';
   document.getElementById('savePlanBtn').style.display='none';
   draftPlan = null;
@@ -338,7 +434,9 @@ function ensureAutoPlan(){
     save(); return;
   }
   if(state.plan && !state.plan.auto) return; // user set a custom deadline — don't touch it
-  const days = Math.max(1, Math.ceil(pending / state.dailyGoal));
+  const eff = effectiveClear();
+  if(eff <= 0){ if(state.plan) state.plan = null; save(); return; } // goal inflow se kam — plan possible nahi
+  const days = Math.max(1, Math.ceil(pending / eff));
   const {schedule, perDay} = makeSchedule(days);
   state.plan = {startISO: todayISO(), days, perDay, pending, created: todayISO(), schedule, auto:true};
   save();
@@ -398,8 +496,11 @@ function render(){
   document.getElementById('stTotal').textContent = total;
   document.getElementById('stDone').textContent = done;
   document.getElementById('stPending').textContent = pending;
-  document.getElementById('stDays').textContent = pending===0 ? '0 🎉' : Math.ceil(pending/state.dailyGoal);
+  const eff = effectiveClear();
+  document.getElementById('stDays').textContent = pending===0 ? '0 🎉' : (eff>0 ? Math.ceil(pending/eff) : '∞');
   document.getElementById('fGoal').value = state.dailyGoal;
+  document.getElementById('fInflow').value = state.inflow;
+  document.getElementById('inflowNote').textContent = state.inflow;
 
   const st = streak();
   document.getElementById('streakBadge').textContent = `🔥 ${st} day streak`;
@@ -434,12 +535,19 @@ function render(){
     const elapsed = Math.max(0, Math.floor((new Date(todayISO()) - start)/86400000));
     const expected = Math.min(p.pending, elapsed * p.perDay);
     banner.style.display='flex';
+    const workload = p.auto ? ` (${p.perDay} backlog + ${state.inflow} live = <b>${p.perDay + state.inflow}/day</b> total)` : '';
     document.getElementById('planText').innerHTML = p.auto
-      ? `⚡ <b>Auto Kill Plan ready:</b> finish <b>${p.pending}</b> pending lectures in <b>${p.days} days</b> (${p.perDay}/day, based on your daily goal). ` +
-        `<small>Add/complete lectures — plan khud update hota rahega. Day ${Math.min(elapsed+1,p.days)} of ${p.days} · expected done by now: ${expected}.</small>`
-      : `⚔️ <b>Kill Plan active:</b> finish ${p.pending} lectures in ${p.days} days (${p.perDay}/day). ` +
+      ? `⚡ <b>Auto Kill Plan ready:</b> clear <b>${p.pending}</b> backlog lectures in <b>${p.days} days</b>${workload} — naye live lectures bhi cover hote rahenge. ` +
+        `<small>Plan khud update hota rahega. Day ${Math.min(elapsed+1,p.days)} of ${p.days} · expected done by now: ${expected}.</small>`
+      : `⚔️ <b>Kill Plan active:</b> finish ${p.pending} lectures in ${p.days} days (${p.perDay}/day + ${state.inflow} live daily). ` +
         `<small>Started ${start.toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — day ${Math.min(elapsed+1,p.days)} of ${p.days}. Expected done by now: ${expected}.</small>`;
     if(schedCard.style.display !== 'none') renderSchedule();
+  }else if(pending > 0 && eff <= 0){
+    banner.style.display='flex';
+    schedCard.style.display='none';
+    document.getElementById('planText').innerHTML =
+      `⚠️ <b>Warning:</b> daily goal (${state.dailyGoal}) ≤ nayi live lectures (${state.inflow}) — backlog kabhi clear nahi hoga! ` +
+      `<small>Goal badhao ya inflow kam karo, plan khud ban jayega.</small>`;
   }else{
     banner.style.display='none';
     schedCard.style.display='none';
@@ -504,6 +612,7 @@ function toast(msg){
   toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
 }
 
+liveSync();
 render();
 </script>
 </body>
