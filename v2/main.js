@@ -262,11 +262,13 @@ function initHeroAmbient() {
 
   /* scroll parallax: background 0.3x, float 0.15x */
   gsap.to('.hero-bg', {
-    y: 180, ease: 'none',
+    y: function () { return Math.round(window.innerHeight * 0.3); },
+    ease: 'none',
     scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
   });
   gsap.to('#hero-float', {
-    y: -110, ease: 'none',
+    y: function () { return -Math.round(window.innerHeight * 0.15); },
+    ease: 'none',
     scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: 0.6 }
   });
 
