@@ -399,6 +399,128 @@ function initDuo() {
 }
 
 /* ============================================================
+   SECTION 6 — HORIZONTAL SCROLL (pinned, survives refresh)
+   ============================================================ */
+function initHorizontal() {
+  var section = $('.hscroll');
+  if (!section || !window.gsap || !window.ScrollTrigger || prefersReduced) return;
+  var row = $('.h-row', section);
+  var dashes = $$('.h-dash', section);
+  if (!row) return;
+
+  /* matchMedia: build pin only >=900px, auto-revert below (no broken pin left) */
+  var mm = gsap.matchMedia();
+  mm.add('(min-width: 900px)', function () {
+    var travel = function () { return row.scrollWidth - section.clientWidth; };
+    var tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: section,
+        start: 'top top',
+        end: function () { return '+=' + travel(); },  /* recalc'd on every refresh */
+        pin: true,
+        pinSpacing: true,
+        anticipatePin: 1,
+        fastScrollEnd: true,
+        invalidateOnRefresh: true,
+        scrub: 1,
+        onUpdate: function (self) {
+          var idx = Math.min(3, Math.floor(self.progress * 4));
+          dashes.forEach(function (d, i) {
+            d.style.transform = 'scaleX(' + (i === idx ? 3 : 1) + ')';
+            d.classList.toggle('on', i === idx);
+          });
+        }
+      }
+    });
+    tl.to(row, { x: function () { return -travel(); }, ease: 'none' });
+    return function () { gsap.set(row, { clearProps: 'transform' }); };
+  });
+}
+
+/* ============================================================
+   SECTION 7 — IMAGE REVEAL (batch wipe + settle)
+   ============================================================ */
+function initGallery() {
+  var items = $$('.g-item');
+  if (!items.length || !window.gsap || !window.ScrollTrigger || prefersReduced) return;
+
+  gsap.set(items, { clipPath: 'inset(0 0 100% 0)' });
+  gsap.set(items.map(function (el) { return $('img', el); }), { scale: 1.3, y: 40 });
+
+  ScrollTrigger.batch(items, {
+    start: 'top 88%',
+    onEnter: function (batch) {
+      gsap.to(batch, {
+        clipPath: 'inset(0 0 0% 0)', duration: 1.1, ease: 'power3.out',
+        stagger: 0.08, overwrite: true, clearProps: 'clip-path'
+      });
+      batch.forEach(function (el) {
+        gsap.to($('img', el), {
+          scale: 1, y: 0, duration: 1.1, ease: 'power3.out',
+          overwrite: true, clearProps: 'transform' /* hand back to CSS hover */
+        });
+      });
+    }
+  });
+}
+
+/* ============================================================
+   SECTION 8 — STATS (count-up, once at top 80%)
+   ============================================================ */
+function initStats() {
+  $$('.stat-num').forEach(function (el, i) {
+    var target = parseFloat(el.getAttribute('data-target') || '0');
+    if (prefersReduced || !window.gsap) {
+      el.textContent = target.toLocaleString('en-IN');
+      return;
+    }
+    el.textContent = (0).toLocaleString('en-IN');
+    ScrollTrigger.create({
+      trigger: el,
+      start: 'top 80%',
+      once: true,
+      onEnter: function () {
+        gsap.set(el, { willChange: 'contents' });
+        var obj = { n: 0 };
+        gsap.to(obj, {
+          n: target, duration: 1.8, delay: i * 0.12, ease: 'power2.out',
+          onUpdate: function () { el.textContent = Math.round(obj.n).toLocaleString('en-IN'); },
+          onComplete: function () {
+            el.textContent = target.toLocaleString('en-IN');
+            gsap.set(el, { clearProps: 'willChange' });
+          }
+        });
+      }
+    });
+  });
+}
+
+/* ============================================================
+   SECTION 9 — FAQ (grid-rows accordion, one open, a11y)
+   ============================================================ */
+function initFaq() {
+  var items = $$('.faq-item');
+  items.forEach(function (item) {
+    var btn = $('.faq-q', item);
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var wasOpen = item.classList.contains('open');
+      items.forEach(function (other) {
+        other.classList.remove('open');
+        var b = $('.faq-q', other);
+        if (b) b.setAttribute('aria-expanded', 'false');
+      });
+      if (!wasOpen) {
+        item.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+      /* keep pins honest while heights change */
+      if (window.ScrollTrigger) ScrollTrigger.refresh();
+    });
+  });
+}
+
+/* ============================================================
    INIT
    ============================================================ */
 function init() {
@@ -409,9 +531,22 @@ function init() {
   initMarquee();
   initStory();
   initDuo();
+  initHorizontal();
+  initGallery();
+  initStats();
+  initFaq();
   headerOnScroll();
   runPreloader();
 }
+
+/* recalc pins on resize (horizontal section must survive mid-page reloads) */
+var resizeTimer = null;
+window.addEventListener('resize', function () {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function () {
+    if (window.ScrollTrigger) ScrollTrigger.refresh();
+  }, 200);
+});
 
 try {
   init();
