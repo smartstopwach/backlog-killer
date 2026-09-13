@@ -128,7 +128,7 @@
   <div class="card plan-banner" id="planBanner" style="display:none">
     <div class="txt" id="planText"></div>
     <button class="btn ghost sm" onclick="toggleSchedule()">📅 Day-wise schedule</button>
-    <button class="btn kill" onclick="openPlan()">⚔️ Custom deadline</button>
+    <button class="btn kill" onclick="openPlan()">🎯 Din badlo</button>
     <button class="btn ghost sm" onclick="clearPlan()">✕</button>
   </div>
 
@@ -192,17 +192,17 @@
 </div>
 
 <dialog id="planDialog">
-  <h2 style="margin-bottom:4px">⚔️ Kill Plan</h2>
+  <h2 style="margin-bottom:4px">⚔️ Kitne din mein backlog pura karna hai?</h2>
   <p style="color:var(--muted); font-size:.88rem; margin-bottom:12px" id="planSummary"></p>
-  <label>In how many days do you want to finish the backlog?</label>
+  <label>Din (days) batao — plan usi ke hisaab se banega</label>
   <div class="formrow" style="align-items:end">
     <input type="number" id="planDays" min="1" max="365" value="14">
-    <button class="btn kill" onclick="buildPlan()">Generate plan</button>
+    <button class="btn kill" onclick="buildPlan()">Plan banao</button>
   </div>
   <div style="margin-top:16px; max-height:44vh; overflow-y:auto" id="planOutput"></div>
   <div class="actions">
-    <button class="btn primary" id="savePlanBtn" style="display:none" onclick="savePlan()">💾 Save plan</button>
-    <button class="btn ghost" onclick="document.getElementById('planDialog').close()">Close</button>
+    <button class="btn primary" id="savePlanBtn" style="display:none" onclick="savePlan()">🔒 Plan lock karo</button>
+    <button class="btn ghost" onclick="document.getElementById('planDialog').close()">Baad mein</button>
   </div>
 </dialog>
 
@@ -227,6 +227,7 @@ if(!state.subjects.some(s=>s.name==='Biology'))
 
 let filter = 'all';
 let draftPlan = null;
+let sessionAsked = false; // ek baar hi khud se puchhe "kitne din mein?"
 
 /* ---------- Lakshya NEET 2027 weekly live timetable (29 Jun – 22 Nov 2026) ---------- */
 const LIVE_WEEK = {
@@ -354,7 +355,8 @@ function addItem(e){
   state.items.unshift({id:uid(), subjectId:sub, chapter, total:count, done:0, createdAt:todayISO()});
   document.getElementById('fChapter').value=''; document.getElementById('fCount').value='1';
   ensureAutoPlan();
-  render(); toast('Added ✅ Kill Plan auto-updated ⚡');
+  render(); toast('Added ✅');
+  if(!state.plan && !sessionAsked){ sessionAsked = true; setTimeout(openPlan, 400); } // site khud puchhegi: kitne din mein?
   return false;
 }
 function bump(id, delta){
@@ -392,14 +394,18 @@ function resetAll(){
 }
 
 /* ---------- kill plan ---------- */
-function openPlan(updateOnly){
+function suggestedDays(pending){
+  const eff = effectiveClear();
+  return Math.max(1, eff > 0 ? Math.ceil(pending/eff) : Math.ceil(pending/4));
+}
+function openPlan(){
   const {pending} = totals();
   const dlg = document.getElementById('planDialog');
-  const eff = effectiveClear();
+  const sug = suggestedDays(pending);
   document.getElementById('planSummary').textContent =
     pending === 0 ? 'No backlog — you are fully caught up! 🎉'
-    : eff <= 0 ? `Warning: goal ${state.dailyGoal}/day ≤ ${state.inflow} new live/day — backlog grow hoga. Pehle goal badhao.`
-    : `You have ${pending} backlog lectures + ${state.inflow} new live daily. Net clear rate ${eff}/day → ~${Math.ceil(pending/eff)} days — or pick a tighter deadline:`;
+    : `Aapke paas ${pending} backlog lectures hain (+${state.inflow} live roz). Suggestion: ${sug} din. Aap bolo — kitne din mein khatam karna hai?`;
+  document.getElementById('planDays').value = state.plan ? state.plan.days : sug;
   document.getElementById('planOutput').innerHTML='';
   document.getElementById('savePlanBtn').style.display='none';
   draftPlan = null;
@@ -426,27 +432,17 @@ function makeSchedule(days){
   }
   return {schedule, perDay};
 }
-/* Auto Kill Plan — generates itself whenever backlog changes, based on your daily goal */
+/* Plan tab tak rakho jab tak backlog hai; 0 hote hi hat jata hai */
 function ensureAutoPlan(){
   const {pending} = totals();
-  if(pending === 0){
-    if(state.plan && state.plan.auto) state.plan = null;
-    save(); return;
-  }
-  if(state.plan && !state.plan.auto) return; // user set a custom deadline — don't touch it
-  const eff = effectiveClear();
-  if(eff <= 0){ if(state.plan) state.plan = null; save(); return; } // goal inflow se kam — plan possible nahi
-  const days = Math.max(1, Math.ceil(pending / eff));
-  const {schedule, perDay} = makeSchedule(days);
-  state.plan = {startISO: todayISO(), days, perDay, pending, created: todayISO(), schedule, auto:true};
-  save();
+  if(pending === 0 && state.plan){ state.plan = null; save(); }
 }
 function buildPlan(){
   const {pending} = totals();
   if(pending===0){ toast('Nothing to kill — backlog is 0 🎉'); return; }
   const days = Math.max(1, parseInt(document.getElementById('planDays').value)||14);
   const {schedule, perDay} = makeSchedule(days);
-  draftPlan = {startISO: todayISO(), days, perDay, pending, created: todayISO(), schedule, auto:false};
+  draftPlan = {days, perDay, schedule};
   renderDraftPlan();
 }
 function toggleSchedule(){
@@ -455,19 +451,29 @@ function toggleSchedule(){
   card.style.display = hidden ? 'block' : 'none';
   if(hidden) renderSchedule();
 }
+function planDaysLeft(){
+  if(!state.plan) return 0;
+  const start = new Date(state.plan.startISO);
+  const elapsed = Math.floor((new Date(todayISO()) - start)/86400000);
+  return state.plan.days - elapsed;
+}
+/* Schedule hamesha TAZA reality se banta hai — miss hua kal, automatically aaj mein reshuffle */
 function renderSchedule(){
   const p = state.plan;
   if(!p) return;
+  const {pending} = totals();
+  const daysLeft = Math.max(1, planDaysLeft());
+  const {schedule, perDay} = makeSchedule(daysLeft);
   document.getElementById('scheduleMeta').textContent =
-    `${p.pending} lectures · ${p.days} days · ${p.perDay}/day ${p.auto?'· auto ⚡':''}`;
+    `${pending} lectures · ${daysLeft} din baaki · roz ~${perDay}`;
   const t = todayISO();
-  document.getElementById('scheduleView').innerHTML = p.schedule.map((d,i)=>{
+  document.getElementById('scheduleView').innerHTML = schedule.map((d,i)=>{
     const isToday = d.date === t;
     return `<div class="plan-day" ${isToday?'style="border-color:var(--good); background:#12291f"':''}>
       <b>Day ${i+1}</b> · ${d.label}${isToday?'<span class="today-pill">AAJ KA DIN</span>':''}
       <div class="tasks">${d.tasks.map(x=>`${subjName(x.subjectId)} — ${esc(x.chapter)} (${x.n} lec)`).join('<br>')}</div>
     </div>`;
-  }).join('');
+  }).join('') || '<div class="empty">Sab clear! 🎉</div>';
 }
 function renderDraftPlan(){
   const out = document.getElementById('planOutput');
@@ -479,9 +485,10 @@ function renderDraftPlan(){
   document.getElementById('savePlanBtn').style.display='inline-block';
 }
 function savePlan(){
-  state.plan = draftPlan; save();
+  state.plan = {startISO: todayISO(), days: draftPlan.days, created: todayISO(), pending0: totals().pending};
+  save();
   document.getElementById('planDialog').close();
-  toast('Kill Plan locked in 🔒 No excuses now!');
+  toast(`🔒 Plan locked: ${draftPlan.days} din. Miss hua toh agle din reshuffle!`);
   render();
 }
 function clearPlan(){ state.plan=null; save(); render(); }
@@ -531,23 +538,30 @@ function render(){
   const schedCard = document.getElementById('scheduleCard');
   if(state.plan){
     const p = state.plan;
-    const start = new Date(p.startISO);
-    const elapsed = Math.max(0, Math.floor((new Date(todayISO()) - start)/86400000));
-    const expected = Math.min(p.pending, elapsed * p.perDay);
+    const daysLeft = planDaysLeft();
+    const deadline = new Date(p.startISO); deadline.setDate(deadline.getDate()+p.days-1);
     banner.style.display='flex';
-    const workload = p.auto ? ` (${p.perDay} backlog + ${state.inflow} live = <b>${p.perDay + state.inflow}/day</b> total)` : '';
-    document.getElementById('planText').innerHTML = p.auto
-      ? `⚡ <b>Auto Kill Plan ready:</b> clear <b>${p.pending}</b> backlog lectures in <b>${p.days} days</b>${workload} — naye live lectures bhi cover hote rahenge. ` +
-        `<small>Plan khud update hota rahega. Day ${Math.min(elapsed+1,p.days)} of ${p.days} · expected done by now: ${expected}.</small>`
-      : `⚔️ <b>Kill Plan active:</b> finish ${p.pending} lectures in ${p.days} days (${p.perDay}/day + ${state.inflow} live daily). ` +
-        `<small>Started ${start.toLocaleDateString('en-IN',{day:'numeric',month:'short'})} — day ${Math.min(elapsed+1,p.days)} of ${p.days}. Expected done by now: ${expected}.</small>`;
-    if(schedCard.style.display !== 'none') renderSchedule();
-  }else if(pending > 0 && eff <= 0){
+    if(pending === 0){
+      document.getElementById('planText').innerHTML = `🏆 <b>Backlog ZERO!</b> ${p.days} din ka plan tha — shabaash, legend!`;
+      schedCard.style.display='none';
+    }else if(daysLeft <= 0){
+      document.getElementById('planText').innerHTML =
+        `⏰ <b>Deadline cross!</b> ${pending} lectures abhi baaki hain. Koi baat nahi — 🎯 se naya deadline set karo, plan reshuffle ho jayega.`;
+      schedCard.style.display='none';
+    }else{
+      const perDay = Math.ceil(pending/daysLeft);
+      document.getElementById('planText').innerHTML =
+        `⚔️ <b>Kill Plan:</b> <b>${pending}</b> lectures · <b>${daysLeft} din</b> baaki (deadline ${deadline.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}) · ` +
+        `Aaj ka target: <b>${perDay} backlog + ${state.inflow} live = ${perDay+state.inflow}</b> ` +
+        `<small>Kisi din miss kiya? Wo automatically agle din mein reshuffle ho jata hai.</small>`;
+      if(schedCard.style.display !== 'none') renderSchedule();
+    }
+  }else if(pending > 0){
     banner.style.display='flex';
     schedCard.style.display='none';
-    document.getElementById('planText').innerHTML =
-      `⚠️ <b>Warning:</b> daily goal (${state.dailyGoal}) ≤ nayi live lectures (${state.inflow}) — backlog kabhi clear nahi hoga! ` +
-      `<small>Goal badhao ya inflow kam karo, plan khud ban jayega.</small>`;
+    document.getElementById('planText').innerHTML = eff <= 0
+      ? `⚠️ <b>Warning:</b> daily goal (${state.dailyGoal}) ≤ nayi live lectures (${state.inflow}) — backlog kabhi clear nahi hoga! <small>Goal badhao, phir deadline set karo.</small>`
+      : `🎯 <b>Backlog ready hai (${pending} lectures)</b> — batao kitne din mein khatam karna hai, plan turant banega.`;
   }else{
     banner.style.display='none';
     schedCard.style.display='none';
